@@ -88,13 +88,13 @@ def runCNN_multiclass():
   model = ConvNet(input_dim=(1, 28, 28), num_filters=16, filter_size=7,
                hidden_dim=16, num_classes=10, weight_scale=1e-3, reg=0.)
   solver = Solver(model, data,
-                    update_rule='sgd',
+                    update_rule='adam',
                     optim_config={
-                      'learning_rate': 0.05,
+                      'learning_rate': 0.001,
                     },
-                    lr_decay=1,
-                    num_epochs=5, batch_size=50,
-                    print_every=1)
+                    lr_decay=0.99,
+                    num_epochs=5, batch_size=100,
+                    print_every=10)
   solver.train()
 
 

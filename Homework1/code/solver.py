@@ -1,7 +1,7 @@
 import numpy as np
 
 import optim
-
+import time
 
 class Solver(object):
   """
@@ -229,13 +229,22 @@ class Solver(object):
     iterations_per_epoch = max(num_train // self.batch_size, 1)
     num_iterations = self.num_epochs * iterations_per_epoch
 
+    t0 = time.time()
+
+    def getFormatTime(seconds):
+      hours, rem = divmod(seconds, 3600)
+      minutes, seconds = divmod(rem, 60)
+      return "{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds)
+
     for t in range(num_iterations):
       self._step()
 
       # Maybe print training loss
       if self.verbose and t % self.print_every == 0:
-        print('(Iteration %d / %d) loss: %f' % (
-               t + 1, num_iterations, self.loss_history[-1]))
+        colapse = time.time() - t0
+        timetogo = colapse/(t+1)*(num_iterations-t-1)
+        print('(Iteration %d / %d) loss: %f time: ' % (
+               t + 1, num_iterations, self.loss_history[-1]) + getFormatTime(colapse) + "/ "+getFormatTime(timetogo))
 
       # At the end of every epoch, increment the epoch counter and decay the
       # learning rate.
