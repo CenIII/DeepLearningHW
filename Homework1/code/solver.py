@@ -244,7 +244,7 @@ class Solver(object):
         colapse = time.time() - t0
         timetogo = colapse/(t+1)*(num_iterations-t-1)
         print('(Iteration %d / %d) loss: %f time: ' % (
-               t + 1, num_iterations, self.loss_history[-1]) + getFormatTime(colapse) + "/ "+getFormatTime(timetogo))
+               t + 1, num_iterations, self.loss_history[-1]) + getFormatTime(colapse) + " / "+getFormatTime(timetogo))
 
       # At the end of every epoch, increment the epoch counter and decay the
       # learning rate.

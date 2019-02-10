@@ -92,7 +92,7 @@ def runCNN_multiclass():
                     optim_config={
                       'learning_rate': 0.001,
                     },
-                    lr_decay=0.99,
+                    lr_decay=0.9,
                     num_epochs=5, batch_size=100,
                     print_every=10)
   solver.train()
