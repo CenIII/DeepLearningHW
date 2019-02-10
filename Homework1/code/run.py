@@ -5,8 +5,7 @@ from cnn import ConvNet
 from solver import Solver
 import pickle
 import gzip
-
-
+import numpy as np
 
 
 def runLogistic():
