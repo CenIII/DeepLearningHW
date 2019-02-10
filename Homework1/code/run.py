@@ -79,11 +79,14 @@ def runCNN_multiclass():
   train_set, valid_set, test_set = pickle.load(f,encoding='latin1')
   f.close()
 
+  datapack = (np.concatenate((train_set[0],valid_set[0]),axis=0),
+              np.concatenate((train_set[1],valid_set[1]),axis=0))
+
   data = {
-      'X_train': train_set[0], # training data
-      'y_train': train_set[1], # training labels
-      'X_val': valid_set[0],# validation data
-      'y_val': valid_set[1] # validation labels
+      'X_train': datapack[0][:55000], # training data
+      'y_train': datapack[1][:55000], # training labels
+      'X_val': datapack[0][55000:],# validation data
+      'y_val': datapack[1][55000:] # validation labels
   }
   model = ConvNet(input_dim=(1, 28, 28), num_filters=16, filter_size=7,
                hidden_dim=16, num_classes=10, weight_scale=1e-3, reg=0.)
