@@ -86,10 +86,10 @@ def runCNN_multiclass():
               np.concatenate((train_set[1],valid_set[1]),axis=0))
 
   data = {
-      'X_train': datapack[0][:55], # training data
-      'y_train': datapack[1][:55], # training labels
-      'X_val': datapack[0][55:100],# validation data
-      'y_val': datapack[1][55:100] # validation labels
+      'X_train': datapack[0][:55000], # training data
+      'y_train': datapack[1][:55000], # training labels
+      'X_val': datapack[0][55000:],# validation data
+      'y_val': datapack[1][55000:] # validation labels
   }
 
   ConvConfig = {
@@ -112,7 +112,7 @@ def runCNN_multiclass():
                       'learning_rate': 0.001,
                     },
                     lr_decay=0.9,
-                    num_epochs=2, batch_size=5,
+                    num_epochs=5, batch_size=100,
                     print_every=10,
                     exp_name=exp_name)
   solver.train()
