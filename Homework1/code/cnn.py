@@ -17,7 +17,7 @@ class ConvNet(object):
   """
   
   def __init__(self, input_dim=(1, 28, 28), num_filters=32, filter_size=7,
-               hidden_dim=100, num_classes=10, weight_scale=1e-3, reg=0.0,
+               hidden_dim=100, num_classes=10, weight_scale=1e-3, reg=0.0, bn=False, dropout=False,
                dtype=np.float32):
     """
     Initialize a new network.
@@ -36,7 +36,8 @@ class ConvNet(object):
     self.params = {}
     self.reg = reg
     self.dtype = dtype
-    
+    self.bn = bn
+    self.dropout = dropout
     ############################################################################
     # TODO: Initialize weights and biases for the three-layer convolutional    #
     # network. Weights should be initialized from a Gaussian with standard     #
@@ -55,6 +56,9 @@ class ConvNet(object):
     self.params['b2'] = np.zeros(hidden_dim)
     self.params['W3'] = np.random.normal(0, weight_scale, (hidden_dim,num_classes))
     self.params['b3'] = np.zeros(num_classes)
+    if self.bn:
+        self.params['gb1'] = np.random.normal(0, weight_scale,(2, int(num_filters))) # gamma beta
+        self.params['gb2'] = np.random.normal(0, weight_scale,(2, hidden_dim)) # gamma beta
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -87,13 +91,38 @@ class ConvNet(object):
     # variable.                                                                #
     ############################################################################
     # print("forward")
+    if self.bn:
+        mode = 'test' if y is None else 'train'
     X = np.reshape(X,(X.shape[0],1,28,28))
     lcn,lcn_cache = conv_forward(X,W1)
+     # bn
+    if self.bn:
+        bn_param1 = {
+            'mode': mode,
+            'eps': 1e-5,
+            'momentum': 0.9
+        }
+        lcn, bn1_cache = batchnorm_forward(lcn, self.params['gb1'][0], self.params['gb1'][1], bn_param1)
     lr,lr_cache = relu_forward(lcn)
     lmx,lmx_cache = max_pool_forward(lr, pool_param)
     lmx_flat = np.reshape(lmx,[X.shape[0],-1])
     lfc,lfc_cache = fc_forward(lmx_flat,W2,b2)
+    # bn
+    if self.bn:
+        bn_param2 = {
+            'mode': mode,
+            'eps': 1e-5,
+            'momentum': 0.9
+        }
+        lfc, bn2_cache = batchnorm_forward(lfc, self.params['gb2'][0], self.params['gb2'][1], bn_param2)
     lr2,lr2_cache = relu_forward(lfc)
+    if self.dropout:
+        dropout_param = {
+            'mode': mode,
+            'p': 0.7
+        }
+        lr2, drp_cache = dropout_forward(lr2, dropout_param)
+
     lsm,lsm_cache = fc_forward(lr2,W3,b3)
 
     scores = lsm
@@ -117,8 +146,12 @@ class ConvNet(object):
     dx,dw,db = fc_backward(dx,lsm_cache)
     grads['W3'] = dw + self.reg*self.params['W3']
     grads['b3'] = db
-    
+    if self.dropout:
+        dx = dropout_backward(dx, drp_cache)
     dx = relu_backward(dx,lr2_cache)
+    if self.bn:
+        dx, dgamma, dbeta = batchnorm_backward(dx,bn2_cache)
+        grads['gb2'] = np.concatenate((dgamma[None,:],dbeta[None,:]),axis=0)
     # print("backward 1")
     dx,dw,db = fc_backward(dx,lfc_cache)
     grads['W2'] = dw + self.reg*self.params['W2']
@@ -128,6 +161,9 @@ class ConvNet(object):
     dx = max_pool_backward(dx,lmx_cache)
     # print("backward 3")
     dx = relu_backward(dx,lr_cache)
+    if self.bn:
+        dx, dgamma, dbeta = batchnorm_backward(dx,bn1_cache)
+        grads['gb1'] = np.concatenate((dgamma[None,:],dbeta[None,:]),axis=0)
     # print("backward 4")
     dx, dw = conv_backward(dx,lcn_cache)
     grads['W1'] = dw + self.reg*self.params['W1']

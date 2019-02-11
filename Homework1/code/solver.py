@@ -2,6 +2,8 @@ import numpy as np
 
 import optim
 import time
+import pickle
+import os
 
 class Solver(object):
   """
@@ -115,6 +117,8 @@ class Solver(object):
 
     self.print_every = kwargs.pop('print_every', 10)
     self.verbose = kwargs.pop('verbose', True)
+    self.exp_name = kwargs.pop('exp_name', 'exp0')
+    os.makedirs(self.exp_name,exist_ok=True)
 
     # Throw an error if there are extra keyword arguments
     if len(kwargs) > 0:
@@ -230,6 +234,7 @@ class Solver(object):
     num_iterations = self.num_epochs * iterations_per_epoch
 
     t0 = time.time()
+    logger = open("./"+self.exp_name+"/log","w")
 
     def getFormatTime(seconds):
       hours, rem = divmod(seconds, 3600)
@@ -243,8 +248,10 @@ class Solver(object):
       if self.verbose and t % self.print_every == 0:
         colapse = time.time() - t0
         timetogo = colapse/(t+1)*(num_iterations-t-1)
-        print('(Iteration %d / %d) loss: %f time: ' % (
-               t + 1, num_iterations, self.loss_history[-1]) + getFormatTime(colapse) + " / "+getFormatTime(timetogo))
+        toprint = '(Iteration %d / %d) loss: %f time: ' % (
+               t + 1, num_iterations, self.loss_history[-1]) + getFormatTime(colapse) + " / "+getFormatTime(timetogo)
+        print(toprint)
+        logger.write(toprint+'\n')
 
       # At the end of every epoch, increment the epoch counter and decay the
       # learning rate.
@@ -253,6 +260,8 @@ class Solver(object):
         self.epoch += 1
         for k in self.optim_configs:
           self.optim_configs[k]['learning_rate'] *= self.lr_decay
+
+        
 
       # Check train and val accuracy on the first iteration, the last
       # iteration, and at the end of each epoch.
@@ -266,8 +275,11 @@ class Solver(object):
         self.val_acc_history.append(val_acc)
 
         if self.verbose:
-          print('(Epoch %d / %d) train acc: %f; val_acc: %f' % (
-                 self.epoch, self.num_epochs, train_acc, val_acc))
+          toprint = '(Epoch %d / %d) train acc: %f; val_acc: %f' % (
+                 self.epoch, self.num_epochs, train_acc, val_acc)
+          print(toprint)
+          logger.write(toprint+'\n')
+          logger.flush()
 
         # Keep track of the best model
         if val_acc > self.best_val_acc:
@@ -275,6 +287,8 @@ class Solver(object):
           self.best_params = {}
           for k, v in self.model.params.items():
             self.best_params[k] = v.copy()
+          with open("./"+self.exp_name+"/bestmodel.pkl","wb") as f:
+            pickle.dump(self.best_params,f)
 
     # At the end of training swap the best params into the model
     self.model.params = self.best_params

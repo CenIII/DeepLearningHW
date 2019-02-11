@@ -155,7 +155,18 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     eps = bn_param.get('eps', 1e-5)
     momentum = bn_param.get('momentum', 0.9)
 
-    N, D = x.shape
+    Xshape = x.shape
+
+    if len(Xshape) > 2:
+        N,C,H,W = x.shape
+        x = np.swapaxes(x,1,3)
+        D = C
+        x = np.reshape(x,[N*H*W,C])
+    else:
+        N = x.shape[0]
+        x = np.reshape(x,[N,-1])
+        _, D = x.shape
+
     running_mean = bn_param.get('running_mean', np.zeros(D, dtype=x.dtype))
     running_var = bn_param.get('running_var', np.zeros(D, dtype=x.dtype))
 
@@ -211,6 +222,11 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     bn_param['running_mean'] = running_mean
     bn_param['running_var'] = running_var
 
+    if len(Xshape) > 2:
+        out = np.reshape(out,[N,W,H,C])
+        out = np.swapaxes(out,1,3)
+    else:
+        out = np.reshape(out,Xshape)
     return out, cache
 
 
@@ -238,8 +254,18 @@ def batchnorm_backward(dout, cache):
     # Referencing the original paper (https://arxiv.org/abs/1502.03167)       #
     # might prove to be helpful.                                              #
     ###########################################################################
+    
+    Dshape = dout.shape
     x_norm, gamma, sigma = cache
-    N, D = x_norm.shape
+
+    if len(Dshape) > 2:
+        N,C,H,W = dout.shape
+        dout = np.swapaxes(dout,1,3)
+        D = C
+        dout = np.reshape(dout,[N*H*W,C])
+    else:
+        dout = np.reshape(dout,[dout.shape[0],-1])
+        N, D = x_norm.shape
 
     dgamma = np.sum(dout * x_norm, axis=0)
 
@@ -247,6 +273,11 @@ def batchnorm_backward(dout, cache):
 
     dx = 1/N*(gamma/sigma)*(N*dout - dbeta - x_norm*dgamma)
 
+    if len(Dshape) > 2:
+        dx = np.reshape(dx,[N,W,H,C])
+        dx = np.swapaxes(dx,1,3)
+    else:
+        dx = np.reshape(dx,Dshape)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################

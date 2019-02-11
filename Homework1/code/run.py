@@ -6,6 +6,7 @@ from solver import Solver
 import pickle
 import gzip
 import numpy as np
+import sys
 
 
 def runLogistic():
@@ -88,16 +89,19 @@ def runCNN_multiclass():
       'y_val': datapack[1][55000:] # validation labels
   }
   model = ConvNet(input_dim=(1, 28, 28), num_filters=16, filter_size=7,
-               hidden_dim=16, num_classes=10, weight_scale=1e-3, reg=0.)
+               hidden_dim=16, num_classes=10, weight_scale=1e-3, reg=0., bn=False, dropout=False)
   solver = Solver(model, data,
                     update_rule='adam',
                     optim_config={
                       'learning_rate': 0.001,
                     },
                     lr_decay=0.9,
-                    num_epochs=5, batch_size=100,
-                    print_every=10)
+                    num_epochs=5, batch_size=10,
+                    print_every=1,
+                    exp_name=sys.argv[1])
   solver.train()
+
+  test_acc = solver.check_accuracy(test_set[0],test_set[1])
 
 
 def main():
