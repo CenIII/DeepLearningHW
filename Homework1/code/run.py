@@ -79,6 +79,10 @@ def runCNN_multiclass():
   train_set, valid_set, test_set = pickle.load(f,encoding='latin1')
   f.close()
   exp_name = sys.argv[1]
+  if len(sys.argv)>2:
+    cont_exp = sys.argv[2]
+  else:
+    cont_exp = None
   os.makedirs(exp_name,exist_ok=True)
   logger = open("./"+exp_name+"/log","w")
 
@@ -100,8 +104,9 @@ def runCNN_multiclass():
       'num_classes':10, 
       'weight_scale':1e-3, 
       'reg':0., 
-      'bn':True, 
-      'dropout':True
+      'bn':False, 
+      'dropout':False,
+      'cont_exp': cont_exp
   }
 
   logger.write(str(ConvConfig)+'\n')

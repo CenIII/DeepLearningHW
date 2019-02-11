@@ -1,6 +1,7 @@
 import numpy as np
 
 from layers import *
+import pickle
 
 
 class ConvNet(object):
@@ -17,7 +18,7 @@ class ConvNet(object):
   """
   
   def __init__(self, input_dim=(1, 28, 28), num_filters=32, filter_size=7,
-               hidden_dim=100, num_classes=10, weight_scale=1e-3, reg=0.0, bn=False, dropout=False,
+               hidden_dim=100, num_classes=10, weight_scale=1e-3, reg=0.0, bn=False, dropout=False, cont_exp=None,
                dtype=np.float32):
     """
     Initialize a new network.
@@ -49,18 +50,24 @@ class ConvNet(object):
     # of the output affine layer.                                              #
     ############################################################################
     # conv - relu - 2x2 max pool - fc - softmax
-
-    self.params['W1'] = np.random.normal(0, weight_scale, (num_filters,input_dim[0],filter_size,filter_size))
-    self.params['b1'] = 0#np.zeros(hidden_dim)
-    self.params['W2'] = np.random.normal(0, weight_scale, (int((input_dim[1]-filter_size+1)*(input_dim[2]-filter_size+1)/4*num_filters),hidden_dim))
-    self.params['b2'] = np.zeros(hidden_dim)
-    self.params['W3'] = np.random.normal(0, weight_scale, (hidden_dim,num_classes))
-    self.params['b3'] = np.zeros(num_classes)
+    if cont_exp:
+        with open("./"+cont_exp+"/bestmodel.pkl","rb") as f:
+            preparams = pickle.load(f)
+    self.params['W1'] = preparams['W1'] if cont_exp else np.random.normal(0, weight_scale, (num_filters,input_dim[0],filter_size,filter_size))
+    self.params['b1'] = preparams['b1'] if cont_exp else 0#np.zeros(hidden_dim)
+    self.params['W2'] = preparams['W2'] if cont_exp else np.random.normal(0, weight_scale, (int((input_dim[1]-filter_size+1)*(input_dim[2]-filter_size+1)/4*num_filters),hidden_dim))
+    self.params['b2'] = preparams['b2'] if cont_exp else np.zeros(hidden_dim)
+    self.params['W3'] = preparams['W3'] if cont_exp else np.random.normal(0, weight_scale, (hidden_dim,num_classes))
+    self.params['b3'] = preparams['b3'] if cont_exp else np.zeros(num_classes)
     if self.bn:
         self.params['gb1'] = np.zeros([2, int(num_filters)]) # gamma beta#np.random.normal(0, weight_scale,(2, int(num_filters))) # gamma beta
         self.params['gb1'][0] = 1
         self.params['gb2'] = np.zeros([2, int(num_filters)]) # np.random.normal(0, weight_scale,(2, hidden_dim)) # gamma beta
         self.params['gb2'][0] = 1
+        if cont_exp:
+            self.params['gb1'] = preparams['gb1']
+            self.params['gb2'] = preparams['gb2']
+            
         self.bn_param1 = {
             'mode': 'train',
             'eps': 1e-5,
