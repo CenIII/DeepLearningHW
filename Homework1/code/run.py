@@ -7,7 +7,7 @@ import pickle
 import gzip
 import numpy as np
 import sys
-
+import os
 
 def runLogistic():
   with open('../data.pkl', "rb" ) as f:
@@ -78,31 +78,50 @@ def runCNN_multiclass():
   f = gzip.open('../mnist.pkl.gz', 'rb')
   train_set, valid_set, test_set = pickle.load(f,encoding='latin1')
   f.close()
+  exp_name = sys.argv[1]
+  os.makedirs(exp_name,exist_ok=True)
+  logger = open("./"+exp_name+"/log","w")
 
   datapack = (np.concatenate((train_set[0],valid_set[0]),axis=0),
               np.concatenate((train_set[1],valid_set[1]),axis=0))
 
   data = {
-      'X_train': datapack[0][:55000], # training data
-      'y_train': datapack[1][:55000], # training labels
-      'X_val': datapack[0][55000:],# validation data
-      'y_val': datapack[1][55000:] # validation labels
+      'X_train': datapack[0][:55], # training data
+      'y_train': datapack[1][:55], # training labels
+      'X_val': datapack[0][55:100],# validation data
+      'y_val': datapack[1][55:100] # validation labels
   }
-  model = ConvNet(input_dim=(1, 28, 28), num_filters=16, filter_size=7,
-               hidden_dim=16, num_classes=10, weight_scale=1e-3, reg=0., bn=False, dropout=False)
-  solver = Solver(model, data,
+
+  ConvConfig = {
+      'input_dim':(1, 28, 28), 
+      'num_filters':16, 
+      'filter_size':7,
+      'hidden_dim':16, 
+      'num_classes':10, 
+      'weight_scale':1e-3, 
+      'reg':0., 
+      'bn':False, 
+      'dropout':False
+  }
+
+  logger.write(str(ConvConfig)+'\n')
+  model = ConvNet(**ConvConfig)
+  solver = Solver(model, data, logger,
                     update_rule='adam',
                     optim_config={
                       'learning_rate': 0.001,
                     },
                     lr_decay=0.9,
-                    num_epochs=5, batch_size=10,
-                    print_every=1,
-                    exp_name=sys.argv[1])
+                    num_epochs=2, batch_size=5,
+                    print_every=10,
+                    exp_name=exp_name)
   solver.train()
 
   test_acc = solver.check_accuracy(test_set[0],test_set[1])
-
+  toprint = "test_acc: "+str(test_acc)
+  print(toprint)
+  logger.write(toprint)
+  logger.flush()
 
 def main():
   runCNN_multiclass()

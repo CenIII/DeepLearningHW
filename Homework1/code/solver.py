@@ -73,7 +73,7 @@ class Solver(object):
       names to gradients of the loss with respect to those parameters.
   """
 
-  def __init__(self, model, data, **kwargs):
+  def __init__(self, model, data, logger, **kwargs):
     """
     Construct a new Solver instance.
     
@@ -118,7 +118,10 @@ class Solver(object):
     self.print_every = kwargs.pop('print_every', 10)
     self.verbose = kwargs.pop('verbose', True)
     self.exp_name = kwargs.pop('exp_name', 'exp0')
-    os.makedirs(self.exp_name,exist_ok=True)
+    self.logger = logger
+    configstr = "update_rule: "+str(self.update_rule)+" lr_decay: "+str(self.lr_decay)+" batch_size: "+str(self.batch_size)+ \
+                " num_epochs: "+str(self.num_epochs)
+    self.logger.write(configstr+'\n')
 
     # Throw an error if there are extra keyword arguments
     if len(kwargs) > 0:
@@ -234,7 +237,6 @@ class Solver(object):
     num_iterations = self.num_epochs * iterations_per_epoch
 
     t0 = time.time()
-    logger = open("./"+self.exp_name+"/log","w")
 
     def getFormatTime(seconds):
       hours, rem = divmod(seconds, 3600)
@@ -251,7 +253,7 @@ class Solver(object):
         toprint = '(Iteration %d / %d) loss: %f time: ' % (
                t + 1, num_iterations, self.loss_history[-1]) + getFormatTime(colapse) + " / "+getFormatTime(timetogo)
         print(toprint)
-        logger.write(toprint+'\n')
+        self.logger.write(toprint+'\n')
 
       # At the end of every epoch, increment the epoch counter and decay the
       # learning rate.
@@ -278,8 +280,8 @@ class Solver(object):
           toprint = '(Epoch %d / %d) train acc: %f; val_acc: %f' % (
                  self.epoch, self.num_epochs, train_acc, val_acc)
           print(toprint)
-          logger.write(toprint+'\n')
-          logger.flush()
+          self.logger.write(toprint+'\n')
+          self.logger.flush()
 
         # Keep track of the best model
         if val_acc > self.best_val_acc:
