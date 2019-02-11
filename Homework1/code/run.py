@@ -100,8 +100,8 @@ def runCNN_multiclass():
       'num_classes':10, 
       'weight_scale':1e-3, 
       'reg':0., 
-      'bn':False, 
-      'dropout':False
+      'bn':True, 
+      'dropout':True
   }
 
   logger.write(str(ConvConfig)+'\n')
@@ -112,7 +112,7 @@ def runCNN_multiclass():
                       'learning_rate': 0.001,
                     },
                     lr_decay=0.9,
-                    num_epochs=5, batch_size=100,
+                    num_epochs=10, batch_size=100,
                     print_every=10,
                     exp_name=exp_name)
   solver.train()

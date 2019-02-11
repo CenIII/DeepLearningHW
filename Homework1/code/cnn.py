@@ -57,8 +57,25 @@ class ConvNet(object):
     self.params['W3'] = np.random.normal(0, weight_scale, (hidden_dim,num_classes))
     self.params['b3'] = np.zeros(num_classes)
     if self.bn:
-        self.params['gb1'] = np.random.normal(0, weight_scale,(2, int(num_filters))) # gamma beta
-        self.params['gb2'] = np.random.normal(0, weight_scale,(2, hidden_dim)) # gamma beta
+        self.params['gb1'] = np.zeros([2, int(num_filters)]) # gamma beta#np.random.normal(0, weight_scale,(2, int(num_filters))) # gamma beta
+        self.params['gb1'][0] = 1
+        self.params['gb2'] = np.zeros([2, int(num_filters)]) # np.random.normal(0, weight_scale,(2, hidden_dim)) # gamma beta
+        self.params['gb2'][0] = 1
+        self.bn_param1 = {
+            'mode': 'train',
+            'eps': 1e-5,
+            'momentum': 0.9
+        }
+        self.bn_param2 = {
+            'mode': 'train',
+            'eps': 1e-5,
+            'momentum': 0.9
+        }
+    if self.dropout:
+        self.dropout_param = {
+            'mode': 'train',
+            'p': 0.9
+        }
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -91,37 +108,28 @@ class ConvNet(object):
     # variable.                                                                #
     ############################################################################
     # print("forward")
+    mode = 'test' if y is None else 'train'
     if self.bn:
-        mode = 'test' if y is None else 'train'
+        self.bn_param1['mode']=mode
+        self.bn_param2['mode']=mode
+    if self.dropout:
+        self.dropout_param['mode']=mode
+
     X = np.reshape(X,(X.shape[0],1,28,28))
     lcn,lcn_cache = conv_forward(X,W1)
      # bn
     if self.bn:
-        bn_param1 = {
-            'mode': mode,
-            'eps': 1e-5,
-            'momentum': 0.9
-        }
-        lcn, bn1_cache = batchnorm_forward(lcn, self.params['gb1'][0], self.params['gb1'][1], bn_param1)
+        lcn, bn1_cache = batchnorm_forward(lcn, self.params['gb1'][0], self.params['gb1'][1], self.bn_param1)
     lr,lr_cache = relu_forward(lcn)
     lmx,lmx_cache = max_pool_forward(lr, pool_param)
     lmx_flat = np.reshape(lmx,[X.shape[0],-1])
     lfc,lfc_cache = fc_forward(lmx_flat,W2,b2)
     # bn
     if self.bn:
-        bn_param2 = {
-            'mode': mode,
-            'eps': 1e-5,
-            'momentum': 0.9
-        }
-        lfc, bn2_cache = batchnorm_forward(lfc, self.params['gb2'][0], self.params['gb2'][1], bn_param2)
+        lfc, bn2_cache = batchnorm_forward(lfc, self.params['gb2'][0], self.params['gb2'][1], self.bn_param2)
     lr2,lr2_cache = relu_forward(lfc)
     if self.dropout:
-        dropout_param = {
-            'mode': mode,
-            'p': 0.7
-        }
-        lr2, drp_cache = dropout_forward(lr2, dropout_param)
+        lr2, drp_cache = dropout_forward(lr2, self.dropout_param)
 
     lsm,lsm_cache = fc_forward(lr2,W3,b3)
 
