@@ -98,7 +98,7 @@ class SVM(object):
     #                                                                          #
     ############################################################################
     loss, dx = svm_loss(scores,y)
-
+    dx = np.reshape(dx,[dx.shape[0],1])
     if self.hidden:
         dx,dw,db = fc_backward(dx,l2_cache)
         grads['W2'] = dw + self.reg*self.params['W2']

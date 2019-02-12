@@ -117,7 +117,7 @@ class Solver(object):
 
     self.print_every = kwargs.pop('print_every', 10)
     self.verbose = kwargs.pop('verbose', True)
-    self.exp_name = kwargs.pop('exp_name', 'exp0')
+    self.exp_name = kwargs.pop('exp_name', 'exp')
     self.logger = logger
     configstr = "update_rule: "+str(self.update_rule)+" lr_decay: "+str(self.lr_decay)+" batch_size: "+str(self.batch_size)+ \
                 " num_epochs: "+str(self.num_epochs)
