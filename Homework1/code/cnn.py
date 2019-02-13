@@ -64,7 +64,6 @@ class ConvNet(object):
         self.params['gb1'][0] = 1
         if cont_exp:
             self.params['gb1'] = preparams['gb1']
-            self.params['gb2'] = preparams['gb2']
 
         self.bn_param1 = {
             'mode': 'train',
