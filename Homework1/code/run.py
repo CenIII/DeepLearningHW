@@ -125,14 +125,14 @@ def runCNN_multiclass():
 
   ConvConfig = {
       'input_dim':(1, 28, 28), 
-      'num_filters':16, 
+      'num_filters':32, 
       'filter_size':7,
-      'hidden_dim':16, 
+      'hidden_dim':100, 
       'num_classes':10, 
       'weight_scale':1e-3, 
       'reg':0., 
-      'bn':False, 
-      'dropout':False,
+      'bn':True, 
+      'dropout':True,
       'cont_exp': cont_exp
   }
 
@@ -143,8 +143,8 @@ def runCNN_multiclass():
                     optim_config={
                       'learning_rate': 0.001,
                     },
-                    lr_decay=0.9,
-                    num_epochs=10, batch_size=100,
+                    lr_decay=0.95,
+                    num_epochs=5, batch_size=100,
                     print_every=10,
                     exp_name=exp_name)
   solver.train()
@@ -156,7 +156,7 @@ def runCNN_multiclass():
   logger.flush()
 
 def main():
-  runSoftmax()
+  runCNN_multiclass()
 
 
 if __name__ == "__main__":

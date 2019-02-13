@@ -54,26 +54,19 @@ class ConvNet(object):
         with open("./"+cont_exp+"/bestmodel.pkl","rb") as f:
             preparams = pickle.load(f)
     self.params['W1'] = preparams['W1'] if cont_exp else np.random.normal(0, weight_scale, (num_filters,input_dim[0],filter_size,filter_size))
-    self.params['b1'] = preparams['b1'] if cont_exp else 0#np.zeros(hidden_dim)
+    self.params['b1'] = preparams['b1'] if cont_exp else 0
     self.params['W2'] = preparams['W2'] if cont_exp else np.random.normal(0, weight_scale, (int((input_dim[1]-filter_size+1)*(input_dim[2]-filter_size+1)/4*num_filters),hidden_dim))
     self.params['b2'] = preparams['b2'] if cont_exp else np.zeros(hidden_dim)
     self.params['W3'] = preparams['W3'] if cont_exp else np.random.normal(0, weight_scale, (hidden_dim,num_classes))
     self.params['b3'] = preparams['b3'] if cont_exp else np.zeros(num_classes)
     if self.bn:
-        self.params['gb1'] = np.zeros([2, int(num_filters)]) # gamma beta#np.random.normal(0, weight_scale,(2, int(num_filters))) # gamma beta
+        self.params['gb1'] = np.zeros([2, int((input_dim[1]-filter_size+1)*(input_dim[2]-filter_size+1)*num_filters)]) # gamma beta#np.random.normal(0, weight_scale,(2, int(num_filters))) # gamma beta
         self.params['gb1'][0] = 1
-        self.params['gb2'] = np.zeros([2, int(num_filters)]) # np.random.normal(0, weight_scale,(2, hidden_dim)) # gamma beta
-        self.params['gb2'][0] = 1
         if cont_exp:
             self.params['gb1'] = preparams['gb1']
             self.params['gb2'] = preparams['gb2']
-            
+
         self.bn_param1 = {
-            'mode': 'train',
-            'eps': 1e-5,
-            'momentum': 0.9
-        }
-        self.bn_param2 = {
             'mode': 'train',
             'eps': 1e-5,
             'momentum': 0.9
@@ -81,14 +74,11 @@ class ConvNet(object):
     if self.dropout:
         self.dropout_param = {
             'mode': 'train',
-            'p': 0.9
+            'p': 0.8
         }
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
-
-    # for k, v in self.params.iteritems():
-    #   self.params[k] = v.astype(dtype)
      
  
   def loss(self, X, y=None):
@@ -114,29 +104,25 @@ class ConvNet(object):
     # computing the class scores for X and storing them in the scores          #
     # variable.                                                                #
     ############################################################################
-    # print("forward")
     mode = 'test' if y is None else 'train'
     if self.bn:
         self.bn_param1['mode']=mode
-        self.bn_param2['mode']=mode
     if self.dropout:
         self.dropout_param['mode']=mode
 
     X = np.reshape(X,(X.shape[0],1,28,28))
     lcn,lcn_cache = conv_forward(X,W1)
-     # bn
     if self.bn:
-        lcn, bn1_cache = batchnorm_forward(lcn, self.params['gb1'][0], self.params['gb1'][1], self.bn_param1)
+        lcn_flat = np.reshape(lcn,[lcn.shape[0],-1])
+        lcn_flat, bn1_cache = batchnorm_forward(lcn_flat, self.params['gb1'][0], self.params['gb1'][1], self.bn_param1)
+        lcn = np.reshape(lcn_flat,lcn.shape)
     lr,lr_cache = relu_forward(lcn)
     lmx,lmx_cache = max_pool_forward(lr, pool_param)
+    if self.dropout:
+        lmx, drp_cache = dropout_forward(lmx, self.dropout_param)
     lmx_flat = np.reshape(lmx,[X.shape[0],-1])
     lfc,lfc_cache = fc_forward(lmx_flat,W2,b2)
-    # bn
-    if self.bn:
-        lfc, bn2_cache = batchnorm_forward(lfc, self.params['gb2'][0], self.params['gb2'][1], self.bn_param2)
     lr2,lr2_cache = relu_forward(lfc)
-    if self.dropout:
-        lr2, drp_cache = dropout_forward(lr2, self.dropout_param)
 
     lsm,lsm_cache = fc_forward(lr2,W3,b3)
 
@@ -157,29 +143,23 @@ class ConvNet(object):
     # for self.params[k]. Don't forget to add L2 regularization!               #
     ############################################################################
     loss, dx = softmax_loss(scores,y)
-    # print("backward 0")
     dx,dw,db = fc_backward(dx,lsm_cache)
     grads['W3'] = dw + self.reg*self.params['W3']
     grads['b3'] = db
-    if self.dropout:
-        dx = dropout_backward(dx, drp_cache)
     dx = relu_backward(dx,lr2_cache)
-    if self.bn:
-        dx, dgamma, dbeta = batchnorm_backward(dx,bn2_cache)
-        grads['gb2'] = np.concatenate((dgamma[None,:],dbeta[None,:]),axis=0)
-    # print("backward 1")
     dx,dw,db = fc_backward(dx,lfc_cache)
     grads['W2'] = dw + self.reg*self.params['W2']
     grads['b2'] = db
-    # print("backward 2")
     dx = np.reshape(dx,lmx.shape)
+    if self.dropout:
+        dx = dropout_backward(dx, drp_cache)
     dx = max_pool_backward(dx,lmx_cache)
-    # print("backward 3")
     dx = relu_backward(dx,lr_cache)
     if self.bn:
-        dx, dgamma, dbeta = batchnorm_backward(dx,bn1_cache)
+        dx_flat = np.reshape(dx,[dx.shape[0],-1])
+        dx_flat, dgamma, dbeta = batchnorm_backward(dx_flat,bn1_cache)
+        dx = np.reshape(dx_flat,dx.shape)
         grads['gb1'] = np.concatenate((dgamma[None,:],dbeta[None,:]),axis=0)
-    # print("backward 4")
     dx, dw = conv_backward(dx,lcn_cache)
     grads['W1'] = dw + self.reg*self.params['W1']
     grads['b1'] = db
