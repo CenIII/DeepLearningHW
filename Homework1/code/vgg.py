@@ -67,7 +67,7 @@ class VGG(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-        x = x.view(-1, 64)
+        x = x.view(-1, 128)
         x = self.fc(x)
         return x
 
