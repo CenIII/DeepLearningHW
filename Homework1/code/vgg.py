@@ -17,58 +17,128 @@ class VGG(nn.Module):
     def __init__(self):
         super(VGG, self).__init__()
         nf = 32
-        self.conv = nn.Sequential(
+        self.res = [None for i in range(4)]
+        self.maxp = [None for i in range(4)]
+        self.pre = nn.Sequential(
             # Stage 1
             # TODO: convolutional layer, input channels 3, output channels 8, filter size 3
             nn.Conv2d(3, nf, 3, stride=1, padding=1),
             nn.ReLU(),
             # TODO: max-pooling layer, size 2
             nn.MaxPool2d(2, padding=0),
+        )
+        self.res[0] = nn.Sequential(
             # Stage 2
             # TODO: convolutional layer, input channels 8, output channels 16, filter size 3
-            nn.Conv2d(nf, int(2*nf), 3, stride=1, padding=1),
+            nn.Conv2d(nf, nf, 3, stride=1, padding=1),
             nn.ReLU(),
-            # TODO: max-pooling layer, size 2
+            nn.Conv2d(nf, nf, 3, stride=1, padding=1),
+        )
+
+        self.maxp[0] = nn.Sequential(
+            nn.ReLU(),
             nn.MaxPool2d(2, padding=0),
-            # Stage 3
-            # TODO: convolutional layer, input channels 16, output channels 32, filter size 3
-            nn.Conv2d(int(2*nf), int(4*nf), 3, stride=1, padding=1),
+            nn.Conv2d(nf, int(2*nf), 3, stride=1, padding=1),
+        )
+
+        self.res[1] = nn.Sequential(
+            # Stage 2
+            # TODO: convolutional layer, input channels 8, output channels 16, filter size 3
+            nn.Conv2d(int(2*nf), int(2*nf), 3, stride=1, padding=1),
             nn.ReLU(),
-            # TODO: convolutional layer, input channels 32, output channels 32, filter size 3
+            nn.Conv2d(int(2*nf), int(2*nf), 3, stride=1, padding=1),
+        )
+
+        self.maxp[1] = nn.Sequential(
+            nn.ReLU(),
+            nn.MaxPool2d(2, padding=0),
+            nn.Conv2d(int(2*nf), int(4*nf), 3, stride=1, padding=1),
+        )
+
+        self.res[2] = nn.Sequential(
+            # Stage 2
+            # TODO: convolutional layer, input channels 8, output channels 16, filter size 3
             nn.Conv2d(int(4*nf), int(4*nf), 3, stride=1, padding=1),
             nn.ReLU(),
-            # TODO: max-pooling layer, size 2
-            nn.MaxPool2d(2, padding=0),
-            # Stage 4
-            # TODO: convolutional layer, input channels 32, output channels 64, filter size 3
-            nn.Conv2d(int(4*nf), int(8*nf), 3, stride=1, padding=1),
-            nn.ReLU(),
-            # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
-            nn.Conv2d(int(8*nf), int(8*nf), 3, stride=1, padding=1),
-            nn.ReLU(),
-            # TODO: max-pooling layer, size 2
-            nn.MaxPool2d(2, padding=0),
-            # Stage 5
-            # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
-            nn.Conv2d(int(8*nf), int(8*nf), 3, stride=1, padding=1),
-            nn.ReLU(),
-            # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
-            nn.Conv2d(int(8*nf), int(8*nf), 3, stride=1, padding=1),
-            nn.ReLU(),
-            # TODO: max-pooling layer, size 2
-            nn.MaxPool2d(2, padding=0)
+            nn.Conv2d(int(4*nf), int(4*nf), 3, stride=1, padding=1),
         )
+
+        self.maxp[2] = nn.Sequential(
+            nn.ReLU(),
+            nn.MaxPool2d(2, padding=0),
+            nn.Conv2d(int(4*nf), int(8*nf), 3, stride=1, padding=1),
+        )
+
+        self.res[3] = nn.Sequential(
+            # Stage 2
+            # TODO: convolutional layer, input channels 8, output channels 16, filter size 3
+            nn.Conv2d(int(8*nf), int(8*nf), 3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(int(8*nf), int(8*nf), 3, stride=1, padding=1),
+        )
+
+        self.maxp[3] = nn.Sequential(
+            nn.ReLU(),
+            nn.MaxPool2d(2, padding=0),
+            nn.Conv2d(int(8*nf), int(16*nf), 3, stride=1, padding=1),
+        )
+
+        # self.res5 = nn.Sequential(
+        #     # Stage 2
+        #     # TODO: convolutional layer, input channels 8, output channels 16, filter size 3
+        #     nn.Conv2d(nf, nf, 3, stride=1, padding=1),
+        #     nn.ReLU()
+        #     nn.Conv2d(nf, nf, 3, stride=1, padding=1),
+        # )
+
+        # self.maxp5 = nn.Sequential(
+        #     nn.ReLU()
+        #     nn.MaxPool2d(2, padding=0),
+        # )
+
+        #     # Stage 3
+        #     # TODO: convolutional layer, input channels 16, output channels 32, filter size 3
+        #     nn.Conv2d(int(2*nf), int(4*nf), 3, stride=1, padding=1),
+        #     nn.ReLU(),
+        #     # TODO: convolutional layer, input channels 32, output channels 32, filter size 3
+        #     nn.Conv2d(int(4*nf), int(4*nf), 3, stride=1, padding=1),
+        #     nn.ReLU(),
+        #     # TODO: max-pooling layer, size 2
+        #     nn.MaxPool2d(2, padding=0),
+        #     # Stage 4
+        #     # TODO: convolutional layer, input channels 32, output channels 64, filter size 3
+        #     nn.Conv2d(int(4*nf), int(8*nf), 3, stride=1, padding=1),
+        #     nn.ReLU(),
+        #     # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
+        #     nn.Conv2d(int(8*nf), int(8*nf), 3, stride=1, padding=1),
+        #     nn.ReLU(),
+        #     # TODO: max-pooling layer, size 2
+        #     nn.MaxPool2d(2, padding=0),
+        #     # Stage 5
+        #     # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
+        #     nn.Conv2d(int(8*nf), int(8*nf), 3, stride=1, padding=1),
+        #     nn.ReLU(),
+        #     # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
+        #     nn.Conv2d(int(8*nf), int(8*nf), 3, stride=1, padding=1),
+        #     nn.ReLU(),
+        #     # TODO: max-pooling layer, size 2
+        #     nn.MaxPool2d(2, padding=0)
+        # )
         self.fc = nn.Sequential(
             # TODO: fully-connected layer (64->64)
-            nn.Linear(int(8*nf), int(8*nf), bias=True),
+            nn.Linear(int(16*nf), int(16*nf), bias=True),
             nn.ReLU(),
             # TODO: fully-connected layer (64->10)
-            nn.Linear(int(8*nf), 10, bias=True)
+            nn.Linear(int(16*nf), 10, bias=True)
         )
-        self.nf = int(8*nf)
+        self.nf = int(16*nf)
 
     def forward(self, x):
-        x = self.conv(x)
+        x = self.pre(x)
+        for i in range(4):
+            x = self.res[i](x) + x
+            x = self.maxp[i](x)
+        # x = self.conv(x)
         x = x.view(-1, self.nf)
         x = self.fc(x)
         return x
