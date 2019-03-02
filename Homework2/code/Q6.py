@@ -261,7 +261,7 @@ def predict(model,testdata,save_pred=False,task_id=0):
 		preds[i] = int(pred)
 		i += 1
 	if save_pred:
-		with open('predictions_q'+str(task_id)+'.txt','w') as f:
+		with open('./Q6exp/predictions_q'+str(task_id)+'.txt','w') as f:
 			for pred in preds:
 				f.write(str(int(pred))+'\n')
 	return preds
@@ -320,7 +320,7 @@ def run(model,crit,dataset,task_id,lr=0.1,batchSize=8):
 			best_model = copy.deepcopy(model.state_dict())
 
 	model.load_state_dict(best_model)
-	torch.save(best_model,'best_model_'+str(task_id)+'.pt')
+	torch.save(best_model,'./Q6exp/best_model_'+str(task_id)+'.pt')
 	# test acc
 	test_acc = check_accuracy(model,testSet)
 	print('test acc: '+str(test_acc))
@@ -331,22 +331,22 @@ def run(model,crit,dataset,task_id,lr=0.1,batchSize=8):
 def main():
 	wordDict, word2vec, dataset = text_preprocess(pretrained=True)
 	print("Q1 running...")
-	# bow = BoW(wordDict)
-	# crit_1 = nn.BCELoss()
-	# run(bow,crit_1,dataset,1)
+	bow = BoW(wordDict)
+	crit_1 = nn.BCELoss()
+	run(bow,crit_1,dataset,1)
 	print("Q2 running...")
-	# wea = WordEmbAverage(100,wordDict)
-	# crit_2 = nn.BCELoss()
-	# run(wea,crit_2,dataset,2,lr=0.04)
+	wea = WordEmbAverage(100,wordDict)
+	crit_2 = nn.BCELoss()
+	run(wea,crit_2,dataset,2,lr=0.04)
 	print("Q3 running...")
-	# wea_glove = WordEmbAverage_Glove(100,wordDict,word2vec)
-	# crit_3 = nn.BCELoss()
-	# run(wea_glove,crit_3,dataset,3,lr=0.04)
+	wea_glove = WordEmbAverage_Glove(100,wordDict,word2vec)
+	crit_3 = nn.BCELoss()
+	run(wea_glove,crit_3,dataset,3,lr=0.04)
 	print("Q4 running...")
-	# rnn = RNN(len(wordDict), 100, bidirectional=False,
-	# 			 embedding=word2vec, update_embedding=True)
-	# crit_4 = nn.BCELoss()
-	# run(rnn,crit_4,dataset,4,lr=0.4)
+	rnn = RNN(len(wordDict), 100, bidirectional=False,
+				 embedding=word2vec, update_embedding=True)
+	crit_4 = nn.BCELoss()
+	run(rnn,crit_4,dataset,4,lr=0.4)
 	print("Q5 running...")
 	lstm = LSTM(len(wordDict), 100, bidirectional=False,
 				 embedding=word2vec, update_embedding=True)
