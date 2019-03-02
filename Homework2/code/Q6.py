@@ -131,7 +131,8 @@ class BoW(nn.Module):
 	def get_bag_of_words(self,x):
 		N = len(x)
 		batch_bow = torch.zeros([N,self.vocabSize])
-
+		if torch.cuda.is_available():
+			batch_bow = batch_bow.cuda()
 		for i in range(len(x)):
 			sent = x[i]
 			for word in sent:
@@ -158,9 +159,13 @@ class WordEmbAverage(nn.Module):
 	def get_embs(self, x):
 		N = len(x)
 		batch_embs = torch.zeros([N,self.emb_dim])
+		if torch.cuda.is_available():
+			batch_embs = batch_embs.cuda()
 
 		for i in range(len(x)):
 			sent = torch.LongTensor(x[i])
+			if torch.cuda.is_available():
+				sent = sent.cuda()
 			batch_embs[i] = torch.mean(self.embedding(sent),0)
 		return batch_embs
 
@@ -173,7 +178,7 @@ class WordEmbAverage(nn.Module):
 class WordEmbAverage_Glove(WordEmbAverage):
 	def __init__(self,emb_dim, wordDict,embedding):
 		super(WordEmbAverage_Glove, self).__init__(emb_dim, wordDict)
-		self.embedding.weight = nn.Parameter(torch.FloatTensor(embedding))
+		self.embedding.weight = nn.Parameter(embedding)
 		# self.embedding.weight.requires_grad = False
 
 class BaseRNN(nn.Module):
@@ -213,6 +218,8 @@ class BaseRNN(nn.Module):
 		for i in range(len(x)):
 			input_var[i,:input_lengths[i]] = np.array(x[i])
 		input_var = torch.LongTensor(input_var)
+		if torch.cuda.is_available():
+			input_var = input_var.cuda()
 		# input_lengths = list(input_lengths)
 		return input_var,input_lengths
 
@@ -274,6 +281,9 @@ def check_accuracy(model, testset):
 	return acc
 # q1 run
 def run(model,crit,dataset,task_id,lr=0.1,batchSize=8):
+	if torch.cuda.is_available():
+		model = model.cuda()
+		crit = crit.cuda()
 	optimizer = optim.Adam(model.parameters(), lr = lr)
 	# shuffle train data
 
@@ -302,6 +312,8 @@ def run(model,crit,dataset,task_id,lr=0.1,batchSize=8):
 			# get batch of data
 			inp = list(trainSet['data'][i*batchSize:(i+1)*batchSize])
 			label = torch.FloatTensor(trainSet['label'][i*batchSize:(i+1)*batchSize]).unsqueeze(1)
+			if torch.cuda.is_available():
+				label = label.cuda()
 			# feed batch to model
 			pred = model(inp)
 			# loss
