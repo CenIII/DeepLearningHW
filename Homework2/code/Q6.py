@@ -263,10 +263,11 @@ class LSTM(BaseRNN):
 def predict(model,testdata,save_pred=False,task_id=0):
 	preds = np.zeros(len(testdata))
 	i = 0
-	for sent in testdata:
-		pred = model([sent])
-		preds[i] = int(pred)
-		i += 1
+	with torch.no_grad():
+		for sent in testdata:
+			pred = model([sent])
+			preds[i] = int(pred)
+			i += 1
 	if save_pred:
 		with open('./Q6exp/predictions_q'+str(task_id)+'.txt','w') as f:
 			for pred in preds:
@@ -298,7 +299,7 @@ def run(model,crit,dataset,task_id,lr=0.1,batchSize=8):
 	
 	def adjust_learning_rate(optimizer, epoch):
 		"""Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
-		lr = args.lr * (0.1 ** (epoch // 10))
+		lr = args.lr * (0.1 ** (epoch // 5))
 		for param_group in optimizer.param_groups:
 			param_group['lr'] = lr
 	# for epoches
@@ -342,18 +343,18 @@ def run(model,crit,dataset,task_id,lr=0.1,batchSize=8):
 # main
 def main():
 	wordDict, word2vec, dataset = text_preprocess(pretrained=True)
-	print("Q1 running...")
-	bow = BoW(wordDict)
-	crit_1 = nn.BCELoss()
-	run(bow,crit_1,dataset,1)
-	print("Q2 running...")
-	wea = WordEmbAverage(100,wordDict)
-	crit_2 = nn.BCELoss()
-	run(wea,crit_2,dataset,2,lr=0.04)
-	print("Q3 running...")
-	wea_glove = WordEmbAverage_Glove(100,wordDict,word2vec)
-	crit_3 = nn.BCELoss()
-	run(wea_glove,crit_3,dataset,3,lr=0.04)
+	# print("Q1 running...")
+	# bow = BoW(wordDict)
+	# crit_1 = nn.BCELoss()
+	# run(bow,crit_1,dataset,1)
+	# print("Q2 running...")
+	# wea = WordEmbAverage(100,wordDict)
+	# crit_2 = nn.BCELoss()
+	# run(wea,crit_2,dataset,2,lr=0.04)
+	# print("Q3 running...")
+	# wea_glove = WordEmbAverage_Glove(100,wordDict,word2vec)
+	# crit_3 = nn.BCELoss()
+	# run(wea_glove,crit_3,dataset,3,lr=0.04)
 	print("Q4 running...")
 	rnn = RNN(len(wordDict), 100, bidirectional=False,
 				 embedding=word2vec, update_embedding=True)
