@@ -281,7 +281,7 @@ def check_accuracy(model, testset):
 	acc = np.sum(preds==label)/len(label)
 	return acc
 # q1 run
-def run(model,crit,dataset,task_id,lr=0.1,batchSize=8):
+def run(model,crit,dataset,task_id,lr=0.001,batchSize=100):
 	if torch.cuda.is_available():
 		model = model.cuda()
 		crit = crit.cuda()
@@ -359,12 +359,12 @@ def main():
 	rnn = RNN(len(wordDict), 100, bidirectional=False,
 				 embedding=word2vec, update_embedding=True)
 	crit_4 = nn.BCELoss()
-	run(rnn,crit_4,dataset,4,lr=0.4)
+	run(rnn,crit_4,dataset,4,lr=0.001)
 	print("Q5 running...")
 	lstm = LSTM(len(wordDict), 100, bidirectional=False,
 				 embedding=word2vec, update_embedding=True)
 	crit_5 = nn.BCELoss()
-	run(lstm,crit_5,dataset,5,lr=0.4)
+	run(lstm,crit_5,dataset,5,lr=0.001)
 
 
 if __name__== "__main__":
