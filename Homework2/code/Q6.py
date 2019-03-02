@@ -15,9 +15,9 @@ def get_glove():
 	words = []
 	idx = 0
 	word2idx = {}
-	vectors = bcolz.carray(np.zeros(1), rootdir=f'/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d.dat', mode='w')
+	vectors = bcolz.carray(np.zeros(1), rootdir='/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d.dat', mode='w')
 
-	with open(f'/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d.txt', 'rb') as f:
+	with open('/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d.txt', 'rb') as f:
 		for l in f:
 			line = l.decode().split()
 			if(len(line[1:])==100):
@@ -31,14 +31,14 @@ def get_glove():
 			# 	print(len(vectors))
 	
 	print('glove done')
-	vectors = bcolz.carray(vectors[1:].reshape((1193513, 100)), rootdir=f'/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d.dat', mode='w')
+	vectors = bcolz.carray(vectors[1:].reshape((1193513, 100)), rootdir='/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d.dat', mode='w')
 	vectors.flush()
-	pickle.dump(words, open(f'/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d_words.pkl', 'wb'))
-	pickle.dump(word2idx, open(f'/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d_idx.pkl', 'wb'))
+	pickle.dump(words, open('/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d_words.pkl', 'wb'))
+	pickle.dump(word2idx, open('/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d_idx.pkl', 'wb'))
 
-	vectors = bcolz.open(f'/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d.dat')[:]
-	words = pickle.load(open(f'/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d_words.pkl', 'rb'))
-	word2idx = pickle.load(open(f'/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d_idx.pkl', 'rb'))
+	vectors = bcolz.open('/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d.dat')[:]
+	words = pickle.load(open('/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d_words.pkl', 'rb'))
+	word2idx = pickle.load(open('/Users/CenIII/Downloads/glove.twitter.27B/glove.twitter.27B.100d_idx.pkl', 'rb'))
 
 	glove = {w: vectors[word2idx[w]] for w in words}
 
