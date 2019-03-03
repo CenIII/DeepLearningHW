@@ -137,7 +137,6 @@ class BoW(nn.Module):
 			sent = x[i]
 			for word in sent:
 				batch_bow[i][word] = 1
-
 		return batch_bow
 
 	def forward(self,x):
@@ -178,7 +177,7 @@ class WordEmbAverage(nn.Module):
 class WordEmbAverage_Glove(WordEmbAverage):
 	def __init__(self,emb_dim, wordDict,embedding):
 		super(WordEmbAverage_Glove, self).__init__(emb_dim, wordDict)
-		self.embedding.weight = nn.Parameter(embedding)
+		self.embedding.weight = nn.Parameter(torch.FloatTensor(embedding))
 		# self.embedding.weight.requires_grad = False
 
 class BaseRNN(nn.Module):
@@ -196,23 +195,17 @@ class BaseRNN(nn.Module):
 			raise ValueError("Unsupported RNN Cell: {0}".format(rnn_cell))
 		self.embedding = nn.Embedding(vocab_size, hidden_size)
 		if embedding is not None:
-			self.embedding.weight = nn.Parameter(embedding)
+			self.embedding.weight = nn.Parameter(torch.FloatTensor(embedding))
 		self.embedding.weight.requires_grad = update_embedding
-		self.rnn = self.rnn_cell(hidden_size, hidden_size,
-								 batch_first=True, bidirectional=bidirectional)
-
+		self.rnn = self.rnn_cell(hidden_size, hidden_size,batch_first=True, bidirectional=bidirectional)
 		self.linear = nn.Linear(self.hidden_size,1)
 		self.sigmoid = nn.Sigmoid()
-
-	# def forward(self, *args, **kwargs):
-	#     raise NotImplementedError()
 
 	def format_input(self, x):
 		N = len(x)
 		input_lengths = np.zeros(N,dtype=np.int64)
 		for i in range(len(x)):
 			input_lengths[i] = len(x[i])
-
 		max_len = max(input_lengths)
 		input_var = np.zeros([N,max_len])
 		for i in range(len(x)):
@@ -220,7 +213,6 @@ class BaseRNN(nn.Module):
 		input_var = torch.LongTensor(input_var)
 		if torch.cuda.is_available():
 			input_var = input_var.cuda()
-		# input_lengths = list(input_lengths)
 		return input_var,input_lengths
 
 	def forward(self, x):
@@ -239,8 +231,6 @@ class BaseRNN(nn.Module):
 		
 		output = output[rev_inds]
 		hidden = hidden[:,rev_inds]
-		# return output, hidden
-		
 		# classification
 		feature = hidden[0]
 		pred = self.sigmoid(self.linear(feature))
@@ -265,8 +255,9 @@ def predict(model,testdata,save_pred=False,task_id=0):
 	i = 0
 	with torch.no_grad():
 		for sent in testdata:
-			pred = model([sent])
-			preds[i] = int(pred)
+			pred = model([sent])[0]
+			# preds[i] = int(pred[0]<pred[1])
+			preds[i] = int(pred[0]>0.5)
 			i += 1
 	if save_pred:
 		with open('./Q6exp/predictions_q'+str(task_id)+'.txt','w') as f:
@@ -280,8 +271,9 @@ def check_accuracy(model, testset):
 	preds = predict(model,data)
 	acc = np.sum(preds==label)/len(label)
 	return acc
+
 # q1 run
-def run(model,crit,dataset,task_id,lr=0.001,batchSize=100):
+def run(model,crit,dataset,task_id,lr=0.01,batchSize=100):
 	if torch.cuda.is_available():
 		model = model.cuda()
 		crit = crit.cuda()
@@ -297,11 +289,12 @@ def run(model,crit,dataset,task_id,lr=0.001,batchSize=100):
 	
 	iters = int(trainSize/batchSize)
 	
-	def adjust_learning_rate(optimizer, epoch):
+	def adjust_learning_rate(optimizer, epoch, arglr):
 		"""Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
-		lr = args.lr * (0.1 ** (epoch // 5))
+		lr =  arglr * (0.5 ** (epoch // 5))
 		for param_group in optimizer.param_groups:
 			param_group['lr'] = lr
+	
 	# for epoches
 	print('start to train...')
 	best_val_acc = 0
@@ -325,6 +318,8 @@ def run(model,crit,dataset,task_id,lr=0.001,batchSize=100):
 			# step
 			optimizer.step()
 			qdar.set_postfix(loss= '{:5.4f}'.format(loss))
+		
+		adjust_learning_rate(optimizer, epoch, lr)
 		# validate acc
 		val_acc = check_accuracy(model,valSet)
 		print('val acc: '+str(val_acc))
@@ -350,21 +345,21 @@ def main():
 	# print("Q2 running...")
 	# wea = WordEmbAverage(100,wordDict)
 	# crit_2 = nn.BCELoss()
-	# run(wea,crit_2,dataset,2,lr=0.04)
+	# run(wea,crit_2,dataset,2,lr=0.01)
 	# print("Q3 running...")
 	# wea_glove = WordEmbAverage_Glove(100,wordDict,word2vec)
 	# crit_3 = nn.BCELoss()
-	# run(wea_glove,crit_3,dataset,3,lr=0.04)
+	# run(wea_glove,crit_3,dataset,3,lr=0.01)
 	print("Q4 running...")
 	rnn = RNN(len(wordDict), 100, bidirectional=False,
 				 embedding=word2vec, update_embedding=True)
 	crit_4 = nn.BCELoss()
-	run(rnn,crit_4,dataset,4,lr=0.001)
+	run(rnn,crit_4,dataset,4,lr=0.01)
 	print("Q5 running...")
 	lstm = LSTM(len(wordDict), 100, bidirectional=False,
 				 embedding=word2vec, update_embedding=True)
 	crit_5 = nn.BCELoss()
-	run(lstm,crit_5,dataset,5,lr=0.001)
+	run(lstm,crit_5,dataset,5,lr=0.01)
 
 
 if __name__== "__main__":

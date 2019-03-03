@@ -133,25 +133,35 @@ class CaptioningRNN(object):
 
         # Forward Pass
         # (1)
-        
+        h0,h0_cache = fc_forward(features,W_proj,b_proj)
         # (2)
-        
+        inps,inps_cache = word_embedding_forward(captions_in, W_embed)
         # (3)
-        
+        inps = inps.swapaxes(1,0)
+        if self.cell_type=='rnn':
+            hidden, rnn_cache = rnn_forward(inps, h0, Wx, Wh, b)    # [N, T, H]
+        else:    
+            hidden, lstm_cache = lstm_forward(inps, h0, Wx, Wh, b)
         # (4)
-        
+        hidden = hidden.swapaxes(1,0)
+        scores, scores_cache = temporal_fc_forward(hidden, W_vocab, b_vocab)    # [N, T, V]
         # (5)
-
+        loss, dscores = temporal_softmax_loss(scores, captions_out, mask)
 
         # Gradients
         # (4)
-        
+        dhidden, grads['W_vocab'], grads['b_vocab'] = temporal_fc_backward(dscores, scores_cache)
+        dhidden = dhidden.swapaxes(1,0)
         # (3)
-        
+        if self.cell_type == 'rnn':    
+            dinps, dh0, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dhidden, rnn_cache)
+        else:    
+            dinps, dh0, grads['Wx'], grads['Wh'], grads['b'] = lstm_backward(dhidden, lstm_cache)
         # (2)
-        
+        dinps = dinps.swapaxes(1,0)
+        grads['W_embed'] = word_embedding_backward(dinps, inps_cache)
         # (1)
-
+        _, grads['W_proj'], grads['b_proj'] = fc_backward(dh0, h0_cache)
 
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -195,10 +205,10 @@ class CaptioningRNN(object):
         # transform to the input image features. The first word that you feed to  #
         # the RNN should be the <START> token; its value is stored in the         #
         # variable self._start. At each timestep you will need to do to:          #
-        # (1) Embed the previous word using the learned word embeddings           #
+        # (1) Embed the current word using the learned word embeddings            #
         # (2) Make an RNN step using the previous hidden state and the embedded   #
         #     current word to get the next hidden state.                          #
-        # (3) Apply the learned fc transformation to the next hidden state to #
+        # (3) Apply the learned fc transformation to the next hidden state to     #
         #     get scores for all words in the vocabulary                          #
         # (4) Select the word with the highest score as the next word, writing it #
         #     to the appropriate slot in the captions variable                    #
@@ -210,8 +220,19 @@ class CaptioningRNN(object):
         # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
         # a loop.                                                                 #
         ###########################################################################
-
-
+        h0,h0_cache = fc_forward(features,W_proj,b_proj)
+        h = h0
+        c = 0
+        captions[:, 0] = self._start
+        for i in range(max_length):
+            inp, _ = word_embedding_forward(captions[:, i], W_embed)
+            if self.cell_type == 'rnn':
+                h = rnn_step_forward(inp, h, Wx, Wh, b)[0]
+            else:
+                h, c, _ = lstm_step_forward(inp, h, c, Wx, Wh, b)
+            scores, _ = fc_forward(h,W_vocab,b_vocab)
+            nxt_inp = np.argmax(scores,axis=1)
+            captions[:,i] = nxt_inp
 
         ############################################################################
         #                             END OF YOUR CODE                             #

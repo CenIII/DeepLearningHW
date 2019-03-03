@@ -232,6 +232,7 @@ def style_transfer(content_image, style_image, image_size, style_size, content_l
     plt.show()
     plt.figure()
     
+    loss_rec = np.zeros(200)
     for t in range(200):
         if t < 190:
             img.clamp_(-1.5, 1.5)
@@ -242,9 +243,9 @@ def style_transfer(content_image, style_image, image_size, style_size, content_l
         #TODO:Compute loss
         c_loss = content_loss(content_weight, feats[content_layer], content_target)
         s_loss = style_loss(feats, style_layers, style_targets, style_weights)
-        t_loss = tv_loss(img, tv_weight) 
+        t_loss = tv_loss(img_var, tv_weight) 
         loss = c_loss + s_loss + t_loss
-        
+        loss_rec[t] = loss.data.numpy()
         loss.backward()
 
         # Perform gradient descents on our image values
@@ -261,6 +262,12 @@ def style_transfer(content_image, style_image, image_size, style_size, content_l
     print('Iteration {}'.format(t))
     plt.axis('off')
     plt.imshow(deprocess(img.cpu()))
+    plt.show()
+
+    plt.plot(loss_rec)
+    plt.xlabel('Iteration')
+    plt.ylabel('Loss')
+    plt.title('Training loss history')
     plt.show()
 
 def main():

@@ -121,3 +121,5 @@ data/
 exp*
 
 *.docx
+coco_captioning/
+*exp/

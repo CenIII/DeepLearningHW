@@ -406,6 +406,12 @@ def temporal_fc_forward(x, w, b):
     - out: Output data of shape (N, T, M)
     - cache: Values needed for the backward pass
     """
+    N,T,D = x.shape
+    x_flat = np.reshape(x,(N*T,-1))
+    out = x_flat.dot(w) + b 
+    out = np.reshape(out,(N,T,-1))
+    cache = (x, w, b)
+    return out, cache
 
 
 def temporal_fc_backward(dout, cache):
@@ -419,6 +425,16 @@ def temporal_fc_backward(dout, cache):
     - dw: Gradient of weights, of shape (D, M)
     - db: Gradient of biases, of shape (M,)
     """
+    x, w, b = cache
+    dx, dw, db = None, None, None
+    N,T,D = x.shape
+    x_flat = np.reshape(x,(N*T,-1))
+    dout_flat = np.reshape(dout,(N*T,-1))
+    dx = np.dot(dout_flat,w.T)
+    dw = x_flat.T.dot(dout_flat)
+    db = np.sum(dout_flat,axis=0)
+    dx = np.reshape(dx,[N,T,D])
+    return dx, dw, db
 
 
 
@@ -445,6 +461,21 @@ def temporal_softmax_loss(x, y, mask):
     - loss: Scalar giving loss
     - dx: Gradient of loss with respect to scores x.
     """
+    N, T, V = x.shape
+    x_flat = x.reshape(N*T, V)
+    y_flat = y.reshape(N*T)
+    mask_flat = mask.reshape(N*T)
+    def softmax(x):
+        e_x = np.exp(x) # - np.max(x)
+        return e_x / e_x.sum(axis=1,keepdims=True)
+    probs = softmax(x_flat)
+    loss = -np.sum(mask_flat * np.log(probs[np.arange(N * T), y_flat])) / N
+    dx_flat = probs.copy()
+    dx_flat[np.arange(N*T), y_flat] -= 1
+    dx_flat = dx_flat*mask_flat[:, None]/N
+    dx = dx_flat.reshape(N, T, V)
+
+    return loss, dx
 
 
 
