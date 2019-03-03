@@ -75,8 +75,6 @@ class CaptioningSolver(object):
         """
         self.model = model
         self.data = data
-        if torch.cuda.is_available():
-            self.model = self.model.cuda()
         # Unpack keyword arguments
         self.update_rule = kwargs.pop('update_rule', 'sgd')
         self.optim_config = kwargs.pop('optim_config', {})
@@ -131,9 +129,6 @@ class CaptioningSolver(object):
                       batch_size=self.batch_size,
                       split='train')
         captions, features, urls = minibatch
-        if torch.cuda.is_available():
-            captions = captions.cuda()
-            features = features.cuda()
         # Compute loss and gradient
         loss, grads = self.model.loss(features, captions)
         self.loss_history.append(loss)
