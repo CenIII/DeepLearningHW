@@ -108,23 +108,23 @@ def main():
     plt.title('Training loss history')
     plt.show()
 
-    # BLEUscores = {}
-    # for split in ['train', 'val']:
-    #     minibatch = sample_coco_minibatch(small_data, split=split, batch_size=1000)
-    #     gt_captions, features, urls = minibatch
-    #     gt_captions = decode_captions(gt_captions, small_data['idx_to_word'])
+    BLEUscores = {}
+    for split in ['train', 'val']:
+        minibatch = sample_coco_minibatch(small_data, split=split, batch_size=1000)
+        gt_captions, features, urls = minibatch
+        gt_captions = decode_captions(gt_captions, small_data['idx_to_word'])
 
-    #     sample_captions = small_lstm_model.sample(features)
-    #     sample_captions = decode_captions(sample_captions, small_data['idx_to_word'])
+        sample_captions = small_lstm_model.sample(features)
+        sample_captions = decode_captions(sample_captions, small_data['idx_to_word'])
 
-    #     total_score = 0.0
-    #     for gt_caption, sample_caption, url in zip(gt_captions, sample_captions, urls):
-    #         total_score += BLEU_score(gt_caption, sample_caption)
+        total_score = 0.0
+        for gt_caption, sample_caption, url in zip(gt_captions, sample_captions, urls):
+            total_score += BLEU_score(gt_caption, sample_caption)
 
-    #     BLEUscores[split] = total_score / len(sample_captions)
+        BLEUscores[split] = total_score / len(sample_captions)
 
-    # for split in BLEUscores:
-    #     print('Average BLEU score for %s: %f' % (split, BLEUscores[split]))
+    for split in BLEUscores:
+        print('Average BLEU score for %s: %f' % (split, BLEUscores[split]))
 
     ind = 0
     def sample_lstm(ind):
