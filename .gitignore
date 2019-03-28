@@ -123,3 +123,7 @@ exp*
 *.docx
 coco_captioning/
 *exp/
+
+data/
+att_face*
+lfw_face*
